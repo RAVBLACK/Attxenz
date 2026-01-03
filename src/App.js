@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from 'firebase/auth';
 import { getFirestore, doc, setDoc, onSnapshot } from 'firebase/firestore';
@@ -37,9 +37,91 @@ const isCustomSaturdayHoliday = (date, saturdayHolidays = []) => {
     const weekOfMonth = Math.ceil(date.getDate() / 7);
     return saturdayHolidays.includes(weekOfMonth);
 };
+
+// Motivational quotes for goal completion
+const motivationalQuotes = [
+  { text: "A goal without a plan is just a wish.", author: "Antoine de Saint-Exupéry" },
+  { text: "Set a goal so big that you can't achieve it until you grow into the person who can.", author: "Unknown" },
+  { text: "The only impossible journey is the one you never begin.", author: "Tony Robbins" },
+  { text: "Don't count the days, make the days count.", author: "Muhammad Ali" },
+  { text: "You don't have to be great to start, but you have to start to be great.", author: "Zig Ziglar" },
+  { text: "The secret of getting ahead is getting started.", author: "Mark Twain" },
+  { text: "Small progress is still progress. Keep going.", author: "Unknown" },
+  { text: "Success is not final, failure is not fatal: it is the courage to continue that counts.", author: "Winston Churchill" },
+  { text: "Focus on the step in front of you, not the whole staircase.", author: "Unknown" },
+  { text: "The distance between your dreams and reality is called action.", author: "Unknown" },
+  { text: "You are one decision away from a completely different life.", author: "Unknown" },
+  { text: "The harder you work for something, the greater you'll feel when you achieve it.", author: "Unknown" },
+  { text: "Your goals are the road maps that guide you and show you what is possible.", author: "Les Brown" },
+  { text: "If it doesn't challenge you, it won't change you.", author: "Unknown" },
+  { text: "Stop wishing. Start doing.", author: "Unknown" },
+  { text: "The only limit to your impact is your imagination and commitment.", author: "Tony Robbins" },
+  { text: "Action is the foundational key to all success.", author: "Pablo Picasso" },
+  { text: "Success is the sum of small efforts repeated daily.", author: "Robert Collier" },
+  { text: "You're closer than you think. Don't quit now.", author: "Unknown" },
+  { text: "Every accomplishment starts with the decision to try.", author: "Unknown" }
+];
+
 const indianPublicHolidays = {
-    2024: [ { date: "2024-01-26", name: "Republic Day" }, { date: "2024-03-25", name: "Holi" }, { date: "2024-03-29", name: "Good Friday" }, { date: "2024-04-11", name: "Eid-ul-Fitar" }, { date: "2024-08-15", name: "Independence Day" }, { date: "2024-10-02", name: "Gandhi Jayanti" }, { date: "2024-10-31", name: "Diwali" }, { date: "2024-12-25", name: "Christmas" } ],
-    2025: [ { date: "2025-01-26", name: "Republic Day" }, { date: "2025-03-14", name: "Holi" }, { date: "2025-04-18", name: "Good Friday" }, { date: "2025-03-31", name: "Eid-ul-Fitar" }, { date: "2025-08-15", name: "Independence Day" }, { date: "2025-10-02", name: "Gandhi Jayanti" }, { date: "2025-10-20", name: "Diwali" }, { date: "2025-12-25", name: "Christmas" } ]
+    2024: [
+        { date: "2024-01-26", name: "Republic Day" },
+        { date: "2024-03-08", name: "Maha Shivaratri" },
+        { date: "2024-03-25", name: "Holi" },
+        { date: "2024-03-29", name: "Good Friday" },
+        { date: "2024-04-11", name: "Eid-ul-Fitr" },
+        { date: "2024-04-17", name: "Ram Navami" },
+        { date: "2024-04-21", name: "Mahavir Jayanti" },
+        { date: "2024-08-15", name: "Independence Day" },
+        { date: "2024-08-26", name: "Janmashtami" },
+        { date: "2024-09-16", name: "Eid-e-Milad" },
+        { date: "2024-10-02", name: "Gandhi Jayanti" },
+        { date: "2024-10-12", name: "Dussehra" },
+        { date: "2024-10-31", name: "Diwali" },
+        { date: "2024-11-01", name: "Diwali (Govardhan Puja)" },
+        { date: "2024-11-15", name: "Guru Nanak Jayanti" },
+        { date: "2024-12-25", name: "Christmas" }
+    ],
+    2025: [
+        { date: "2025-01-14", name: "Makar Sankranti" },
+        { date: "2025-01-26", name: "Republic Day" },
+        { date: "2025-02-26", name: "Maha Shivaratri" },
+        { date: "2025-03-14", name: "Holi" },
+        { date: "2025-03-30", name: "Eid-ul-Fitr" },
+        { date: "2025-03-31", name: "Eid-ul-Fitr (2nd day)" },
+        { date: "2025-04-06", name: "Ram Navami" },
+        { date: "2025-04-10", name: "Mahavir Jayanti" },
+        { date: "2025-04-18", name: "Good Friday" },
+        { date: "2025-06-06", name: "Eid-ul-Adha" },
+        { date: "2025-08-15", name: "Independence Day" },
+        { date: "2025-08-16", name: "Janmashtami" },
+        { date: "2025-09-05", name: "Eid-e-Milad" },
+        { date: "2025-10-02", name: "Gandhi Jayanti" },
+        { date: "2025-10-02", name: "Dussehra" },
+        { date: "2025-10-20", name: "Diwali" },
+        { date: "2025-10-21", name: "Diwali (Govardhan Puja)" },
+        { date: "2025-11-05", name: "Guru Nanak Jayanti" },
+        { date: "2025-12-25", name: "Christmas" }
+    ],
+    2026: [
+        { date: "2026-01-14", name: "Makar Sankranti" },
+        { date: "2026-01-26", name: "Republic Day" },
+        { date: "2026-02-16", name: "Maha Shivaratri" },
+        { date: "2026-03-04", name: "Holi" },
+        { date: "2026-03-20", name: "Eid-ul-Fitr" },
+        { date: "2026-03-25", name: "Ram Navami" },
+        { date: "2026-03-30", name: "Mahavir Jayanti" },
+        { date: "2026-04-03", name: "Good Friday" },
+        { date: "2026-05-27", name: "Eid-ul-Adha" },
+        { date: "2026-08-06", name: "Janmashtami" },
+        { date: "2026-08-15", name: "Independence Day" },
+        { date: "2026-08-26", name: "Eid-e-Milad" },
+        { date: "2026-09-21", name: "Dussehra" },
+        { date: "2026-10-02", name: "Gandhi Jayanti" },
+        { date: "2026-10-08", name: "Diwali" },
+        { date: "2026-10-09", name: "Diwali (Govardhan Puja)" },
+        { date: "2026-11-24", name: "Guru Nanak Jayanti" },
+        { date: "2026-12-25", name: "Christmas" }
+    ]
 };
 const subjectColors = [
     'bg-red-200 dark:bg-red-800/50 text-red-800 dark:text-red-100 border border-red-300 dark:border-red-700',
@@ -85,17 +167,11 @@ function App() {
           } else {
             const initialData = {
               timetable: [], semesterStartDate: '', semesterEndDate: '',
-              holidays: [], saturdayHolidays: [2, 4],
+              holidays: [], saturdayHolidays: [1, 2, 3, 4, 5],
               attendanceLog: {}, // For subject-wise tracking
               cumulativeConducted: 0, // For cumulative tracking
               cumulativeAttended: 0, // For cumulative tracking
-              attendanceGoal: 75,
-              periodTimings: [
-                  { start: '09:00', end: '10:00' }, { start: '10:00', end: '11:00' },
-                  { start: '11:00', end: '12:00' }, { start: '12:00', end: '13:00' },
-                  { start: '13:00', end: '14:00' }, { start: '14:00', end: '15:00' },
-                  { start: '15:00', end: '16:00' }, { start: '16:00', end: '17:00' }
-              ]
+              attendanceGoal: 75
             };
             setDoc(userDocRef, initialData);
             setUserData(initialData);
@@ -226,61 +302,135 @@ function HomePage({ handleLogin }) {
 function Dashboard({ user, userData }) {
   const today = new Date().toISOString().split('T')[0];
   const [predictionDate, setPredictionDate] = useState(today);
-  const [daysToSkip, setDaysToSkip] = useState(0);
   const [classesToSkip, setClassesToSkip] = useState(0);
-  const { currentPercent, futurePercent, totalClasses, attendedClasses, conductedClasses, attendanceGoal, classesToGoal } = useCallback(() => {
+  
+  // Get random quote on each page load
+  const [dailyQuote] = useState(() => {
+    const randomIndex = Math.floor(Math.random() * motivationalQuotes.length);
+    return motivationalQuotes[randomIndex];
+  });
+  
+  const { currentPercent, futurePercent, totalClasses, attendedClasses, conductedClasses, attendanceGoal, classesToGoal, classesToPredictionDate, totalClassesByPredictionDate, totalDaysInSemester, workingDaysCount } = useMemo(() => {
     if (!userData || !userData.semesterStartDate || !userData.semesterEndDate || !userData.timetable) {
-      return { currentPercent: 0, futurePercent: 0, totalClasses: 0, attendedClasses: 0, conductedClasses: 0, attendanceGoal: 75, classesToGoal: 0 };
+      return { currentPercent: 0, futurePercent: 0, totalClasses: 0, attendedClasses: 0, conductedClasses: 0, attendanceGoal: 75, classesToGoal: 0, classesToPredictionDate: 0, totalClassesByPredictionDate: 0, totalDaysInSemester: 0, workingDaysCount: 0 };
     }
     const { semesterStartDate, semesterEndDate, timetable, holidays, saturdayHolidays, cumulativeConducted, cumulativeAttended, attendanceGoal } = userData;
     const startDate = new Date(semesterStartDate);
     const endDate = new Date(semesterEndDate);
     const todayDate = new Date();
+    todayDate.setHours(0, 0, 0, 0);
     const target = new Date(predictionDate);
+    target.setHours(0, 0, 0, 0);
    
     const year = startDate.getFullYear();
     const publicHolidays = indianPublicHolidays[year] || [];
-    const allHolidays = [...(holidays || []), ...publicHolidays.map(h => h.date)];
-   
-    let totalSemesterClasses = 0;
-    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
-        const dayOfWeek = d.getDay();
-        const dateString = d.toISOString().split('T')[0];
-        const isHoliday = allHolidays.includes(dateString) || dayOfWeek === 0 || isCustomSaturdayHoliday(new Date(d), saturdayHolidays);
-        if (!isHoliday) {
-            totalSemesterClasses += (timetable || []).filter(c => c.day === dayOfWeek.toString()).length;
+    const nextYear = endDate.getFullYear();
+    const nextYearHolidays = year !== nextYear ? (indianPublicHolidays[nextYear] || []) : [];
+    const allPublicHolidays = [...publicHolidays.map(h => h.date), ...nextYearHolidays.map(h => h.date)];
+    const allHolidays = [...(holidays || []), ...allPublicHolidays];
+    
+    // Get count of classes per day from timetable
+    const classesPerDay = {};
+    let totalClassesInTimetable = 0;
+    (timetable || []).forEach(cls => {
+        if (!classesPerDay[cls.day]) {
+            classesPerDay[cls.day] = 0;
         }
+        classesPerDay[cls.day]++;
+        totalClassesInTimetable++;
+    });
+    
+    // Debug: Log timetable info
+    console.log('📚 TIMETABLE DEBUG:', {
+        totalClassesInTimetable,
+        classesPerDay,
+        semesterDays: Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)),
+        startDate: semesterStartDate,
+        endDate: semesterEndDate
+    });
+   
+    // Calculate total semester classes by iterating through each date
+    let totalSemesterClasses = 0;
+    let workingDaysCount = 0;
+    let totalDaysInSemester = 0;
+    let holidayCount = 0;
+    const currentDate = new Date(startDate);
+    
+    // Debug: track what days we're actually counting
+    const daysBreakdown = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
+    
+    while (currentDate <= endDate) {
+        totalDaysInSemester++;
+        const dayOfWeek = currentDate.getDay();
+        const dateString = currentDate.toISOString().split('T')[0];
+        
+        // Check if this specific date is a holiday
+        const isHoliday = allHolidays.includes(dateString) || 
+                         dayOfWeek === 0 || 
+                         isCustomSaturdayHoliday(new Date(currentDate), saturdayHolidays);
+        
+        if (isHoliday) {
+            holidayCount++;
+        } else if (classesPerDay[dayOfWeek.toString()]) {
+            // Only count this day if it has classes scheduled in timetable
+            const classesToAdd = classesPerDay[dayOfWeek.toString()];
+            totalSemesterClasses += classesToAdd;
+            daysBreakdown[dayOfWeek]++;
+        }
+        
+        // Count all non-holiday days as working days
+        if (!isHoliday) {
+            workingDaysCount++;
+        }
+        
+        currentDate.setDate(currentDate.getDate() + 1);
     }
+    
+    console.log('📊 CALCULATION RESULTS:', {
+        totalSemesterClasses,
+        totalDaysInSemester,
+        workingDaysCount,
+        holidayCount,
+        daysBreakdown
+    });
    
     const numConducted = Number(cumulativeConducted) || 0;
+    const tomorrow = new Date(todayDate);
+    tomorrow.setDate(tomorrow.getDate() + 1);
     const numAttended = Number(cumulativeAttended) || 0;
     const currentPercent = numConducted > 0 ? (numAttended / numConducted) * 100 : 0;
    
+    // Calculate classes from tomorrow to prediction date
     let futureClassesInPeriod = 0;
-    let classesSkippedFromDays = 0;
-    let workingDaysCounted = 0;
-    for (let d = new Date(todayDate); d <= target; d.setDate(d.getDate() + 1)) {
-        const dayOfWeek = d.getDay();
-        const dateString = d.toISOString().split('T')[0];
-        const isHoliday = allHolidays.includes(dateString) || dayOfWeek === 0 || isCustomSaturdayHoliday(new Date(d), saturdayHolidays);
+    const predictionLoopDate = new Date(tomorrow);
+    
+    while (predictionLoopDate <= target) {
+        const dayOfWeek = predictionLoopDate.getDay();
+        const dateString = predictionLoopDate.toISOString().split('T')[0];
+        
+        // Check if this specific date is a holiday
+        const isHoliday = allHolidays.includes(dateString) || 
+                         dayOfWeek === 0 || 
+                         isCustomSaturdayHoliday(new Date(predictionLoopDate), saturdayHolidays);
        
-        if (!isHoliday) {
-            const classesOnThisDay = (timetable || []).filter(c => c.day === dayOfWeek.toString()).length;
+        if (!isHoliday && classesPerDay[dayOfWeek.toString()]) {
+            const classesOnThisDay = classesPerDay[dayOfWeek.toString()];
             futureClassesInPeriod += classesOnThisDay;
-            if (workingDaysCounted < (Number(daysToSkip) || 0)) {
-                classesSkippedFromDays += classesOnThisDay;
-                workingDaysCounted++;
-            }
         }
+        
+        predictionLoopDate.setDate(predictionLoopDate.getDate() + 1);
     }
-    const totalClassesToSkip = classesSkippedFromDays + (Number(classesToSkip) || 0);
+    const totalClassesToSkip = (Number(classesToSkip) || 0);
     const futureAttended = futureClassesInPeriod - totalClassesToSkip;
     const overallAttended = numAttended + futureAttended;
     const overallConducted = numConducted + futureClassesInPeriod;
     const futurePercent = overallConducted > 0 ? (overallAttended / overallConducted) * 100 : 0;
+    
+    // Calculate classes to goal based on total semester classes
     const goal = attendanceGoal || 75;
     const neededAttended = Math.ceil((goal / 100) * totalSemesterClasses);
     const classesToGoal = Math.max(0, neededAttended - numAttended);
+    
     return {
         currentPercent: currentPercent.toFixed(2),
         futurePercent: futurePercent.toFixed(2),
@@ -288,9 +438,13 @@ function Dashboard({ user, userData }) {
         attendedClasses: numAttended,
         conductedClasses: numConducted,
         attendanceGoal: goal,
-        classesToGoal
+        classesToGoal,
+        classesToPredictionDate: futureClassesInPeriod,
+        totalClassesByPredictionDate: overallConducted,
+        totalDaysInSemester,
+        workingDaysCount
     };
-  }, [userData, predictionDate, daysToSkip, classesToSkip])();
+  }, [userData, predictionDate, classesToSkip]);
   if (!userData) return <div className="text-gray-800 dark:text-gray-200">Loading user data...</div>;
  
   const isBelowGoal = parseFloat(currentPercent) < attendanceGoal;
@@ -304,21 +458,29 @@ function Dashboard({ user, userData }) {
           <p>Please go to the other pages in the sidebar to add your semester dates and timetable.</p>
         </div>
       )}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard title="Current Attendance" value={`${currentPercent}%`} description={`Attended ${attendedClasses} of ${conductedClasses}`} color={isBelowGoal ? 'red' : 'blue'} />
         <GoalProgressCard current={currentPercent} goal={attendanceGoal} classesToGoal={classesToGoal} />
-        <StatCard title="Total Semester Classes" value={totalClasses} description="Estimated for the whole semester" color="green" />
+        <StatCard title="Total Semester Classes" value={totalClasses} description={`${workingDaysCount} working days out of ${totalDaysInSemester}`} color="green" />
+        
+        {/* Daily Motivation Card */}
+        <div className="bg-gradient-to-br from-purple-500 to-pink-500 dark:from-purple-700 dark:to-pink-700 p-6 rounded-2xl shadow-lg text-white">
+          <div className="flex items-center mb-3">
+            <span className="text-2xl mr-2"></span>
+            <h3 className="text-lg font-semibold">Daily Motivation</h3>
+          </div>
+          <p className="text-sm leading-relaxed mb-3 italic">"{dailyQuote.text}"</p>
+          <p className="text-xs opacity-90">— {dailyQuote.author}</p>
+        </div>
       </div>
+      
+
      
       <SettingsCard title="Advanced Attendance Prediction">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
               <div>
                   <label className="block text-sm font-medium text-gray-500 dark:text-gray-400">Calculate on date:</label>
                   <input type="date" value={predictionDate} onChange={e => setPredictionDate(e.target.value)} className="input-style mt-1" />
-              </div>
-              <div>
-                  <label className="block text-sm font-medium text-gray-500 dark:text-gray-400">Working days I'll skip:</label>
-                  <input type="number" min="0" value={daysToSkip} onChange={e => setDaysToSkip(e.target.value)} className="input-style mt-1" />
               </div>
               <div>
                   <label className="block text-sm font-medium text-gray-500 dark:text-gray-400">Extra classes I'll skip:</label>
@@ -328,6 +490,11 @@ function Dashboard({ user, userData }) {
                   <p className="text-lg font-semibold">Predicted Attendance:</p>
                   <p className={`font-bold text-3xl ${futurePercent >= attendanceGoal ? 'text-green-500' : 'text-red-500'}`}>{futurePercent}%</p>
               </div>
+          </div>
+          <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+              <p className="text-sm text-gray-700 dark:text-gray-300">
+                  <span className="font-semibold">By {new Date(predictionDate).toLocaleDateString()}:</span> You'll have <span className="font-bold text-blue-600 dark:text-blue-400">{totalClassesByPredictionDate} total classes</span> conducted, with <span className="font-bold text-blue-600 dark:text-blue-400">{classesToPredictionDate} classes</span> from tomorrow to that date.
+              </p>
           </div>
       </SettingsCard>
      
@@ -339,26 +506,72 @@ function Dashboard({ user, userData }) {
 // --- TimetablePage Component ---
 function TimetablePage({ user, userData }) {
     const [timetable, setTimetable] = useState([]);
-    const [lunchStartTime, setLunchStartTime] = useState('12:00');
-    const [lunchEndTime, setLunchEndTime] = useState('13:00');
     const [pasteData, setPasteData] = useState('');
+    const [showAddModal, setShowAddModal] = useState(false);
+    const [newClass, setNewClass] = useState({ name: '', day: '1', startTime: '09:00', endTime: '10:00' });
+    
     useEffect(() => {
         if (userData) {
             setTimetable(userData.timetable || []);
-            setLunchStartTime(userData.lunchStartTime || '12:00');
-            setLunchEndTime(userData.lunchEndTime || '13:00');
         }
     }, [userData]);
+    
     const handleSave = async (newTimetable) => {
         const userDocRef = doc(db, "users", user.uid);
         await setDoc(userDocRef, { timetable: newTimetable }, { merge: true });
     };
+    
     const handleTimetablePaste = () => {
         if (!pasteData) return alert("Please paste timetable text first.");
         try {
             const json = JSON.parse(pasteData);
-            if (Array.isArray(json) && json.every(item => 'name' in item && 'time' in item && 'day' in item)) {
-                const newTimetable = json.map(item => ({...item, id: Date.now().toString() + Math.random() }));
+            
+            // Check if it's the new day-based format
+            if (!Array.isArray(json) && typeof json === 'object') {
+                const dayMap = {
+                    'Sunday': '0', 'Monday': '1', 'Tuesday': '2', 
+                    'Wednesday': '3', 'Thursday': '4', 'Friday': '5', 'Saturday': '6'
+                };
+                
+                const converted = [];
+                let idCounter = Date.now();
+                
+                Object.entries(json).forEach(([dayName, classes]) => {
+                    const dayNum = dayMap[dayName];
+                    if (dayNum && Array.isArray(classes)) {
+                        classes.forEach(cls => {
+                            if (cls.subject && cls.time) {
+                                const [startTime, endTime] = cls.time.split(' - ').map(t => t.trim());
+                                converted.push({
+                                    id: (idCounter++).toString(),
+                                    name: cls.subject,
+                                    day: dayNum,
+                                    startTime: startTime,
+                                    endTime: endTime
+                                });
+                            }
+                        });
+                    }
+                });
+                
+                if (converted.length > 0) {
+                    setTimetable(converted);
+                    handleSave(converted);
+                    setPasteData('');
+                    alert(`✅ Successfully imported ${converted.length} classes!`);
+                } else {
+                    throw new Error("No valid classes found in the provided JSON.");
+                }
+            }
+            // Old array format
+            else if (Array.isArray(json) && json.every(item => 'name' in item && 'day' in item)) {
+                const newTimetable = json.map(item => {
+                    // Handle old format with 'time' field or new format with startTime/endTime
+                    if (!item.startTime && item.time) {
+                        return {...item, startTime: item.time, endTime: item.time, id: item.id || (Date.now().toString() + Math.random()) };
+                    }
+                    return {...item, id: item.id || (Date.now().toString() + Math.random()) };
+                });
                 setTimetable(newTimetable);
                 handleSave(newTimetable);
                 setPasteData('');
@@ -367,25 +580,38 @@ function TimetablePage({ user, userData }) {
                 throw new Error("Invalid JSON format.");
             }
         } catch (error) {
-            alert("Could not read the text. Please ensure it's in the correct JSON format.");
+            alert("Could not read the text. Please ensure it's in the correct format:\n\nFormat 1 (Day-based):\n{\n  \"Monday\": [{\"time\": \"09:00 - 09:50\", \"subject\": \"Math\"}]\n}\n\nFormat 2 (Array):\n[{\"name\": \"Math\", \"day\": \"1\", \"startTime\": \"09:00\", \"endTime\": \"09:50\"}]");
         }
     };
-    const handleCellClick = (day, time) => {
-        const existingClass = timetable.find(c => c.day === day && c.time.startsWith(time.slice(0,2)));
-        if (existingClass) {
-            if (window.confirm(`Delete "${existingClass.name}"?`)) {
-                const newTimetable = timetable.filter(c => c.id !== existingClass.id);
-                setTimetable(newTimetable);
-                handleSave(newTimetable);
-            }
-        } else {
-            const className = prompt(`Enter class name for this time slot:`);
-            if (className) {
-                const newClass = { id: Date.now().toString(), name: className, time: time, day: day };
-                const newTimetable = [...timetable, newClass];
-                setTimetable(newTimetable);
-                handleSave(newTimetable);
-            }
+    
+    const handleAddClass = () => {
+        if (!newClass.name.trim()) {
+            alert("Please enter a class name");
+            return;
+        }
+        if (newClass.startTime >= newClass.endTime) {
+            alert("End time must be after start time!");
+            return;
+        }
+        const classToAdd = { 
+            id: Date.now().toString() + Math.random(), 
+            name: newClass.name.trim(), 
+            startTime: newClass.startTime,
+            endTime: newClass.endTime,
+            day: newClass.day 
+        };
+        const newTimetable = [...timetable, classToAdd];
+        setTimetable(newTimetable);
+        handleSave(newTimetable);
+        setNewClass({ name: '', day: '1', startTime: '09:00', endTime: '10:00' });
+        setShowAddModal(false);
+    };
+    
+    const handleDeleteClass = (id) => {
+        if (window.confirm("Delete this class?")) {
+            const newTimetable = timetable.filter(c => c.id !== id);
+            setTimetable(newTimetable);
+            handleSave(newTimetable);
         }
     };
    
@@ -395,6 +621,7 @@ function TimetablePage({ user, userData }) {
             handleSave([]);
         }
     };
+    
     const handleExport = () => {
         const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(
           JSON.stringify(timetable, null, 2)
@@ -404,62 +631,178 @@ function TimetablePage({ user, userData }) {
         link.download = "timetable.json";
         link.click();
     };
-    const timeSlots = Array.from({ length: 9 }, (_, i) => `${(i + 9).toString().padStart(2, '0')}:00`); // 9 AM to 5 PM
+    
     const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    
+    // Group classes by day
+    const classesByDay = timetable.reduce((acc, cls) => {
+        if (!acc[cls.day]) acc[cls.day] = [];
+        acc[cls.day].push(cls);
+        return acc;
+    }, {});
+    
+    // Sort classes by time within each day
+    Object.keys(classesByDay).forEach(day => {
+        classesByDay[day].sort((a, b) => {
+            const aTime = a.startTime || a.time || '00:00';
+            const bTime = b.startTime || b.time || '00:00';
+            return aTime.localeCompare(bTime);
+        });
+    });
+    
     return (
         <div className="space-y-6">
             <h1 className="text-3xl md:text-4xl font-bold text-gray-800 dark:text-gray-200">My Timetable</h1>
+            
+            <div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 p-4 rounded-md">
+                <p className="text-sm text-blue-800 dark:text-blue-300">
+                    <span className="font-semibold">Total Classes in Timetable: {timetable.length}</span> - Only these classes will be counted across the semester based on working days.
+                </p>
+                <p className="text-xs text-blue-700 dark:text-blue-400 mt-1">
+                    {Object.keys(timetable.reduce((acc, cls) => ({ ...acc, [cls.day]: (acc[cls.day] || 0) + 1 }), {})).length > 0 
+                        ? `Per week: ${['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map((day, idx) => {
+                            const count = timetable.filter(c => c.day === (idx + 1).toString()).length;
+                            return count > 0 ? `${day}: ${count}` : null;
+                          }).filter(Boolean).join(', ')}`
+                        : 'No classes added yet'}
+                </p>
+            </div>
+            
             <SettingsCard title="Import / Export Timetable">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Paste Timetable Text</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Paste Timetable JSON</label>
                 <textarea
                     value={pasteData}
                     onChange={(e) => setPasteData(e.target.value)}
                     rows="5"
-                    placeholder='[{"name":"Math","time":"10:00","day":"1"}, ...]'
+                    placeholder='[{"name":"Math","startTime":"10:00","endTime":"11:00","day":"1"}, ...]'
                     className="input-style font-mono text-xs"
                 ></textarea>
                 <div className="flex space-x-2 mt-2">
                     <button onClick={handleTimetablePaste} className="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors">
-                        Import from Text
+                        Import from JSON
                     </button>
                     <button onClick={handleExport} className="w-full bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition-colors">
                         Export as JSON
                     </button>
                 </div>
             </SettingsCard>
-            <SettingsCard title="Weekly Schedule">
-                <div className="overflow-x-auto">
-                    <div className="grid grid-cols-7 gap-1 text-center font-semibold text-gray-600 dark:text-gray-300">
-                        <div className="p-2">Time</div>
-                        {daysOfWeek.map(day => <div key={day} className="p-2">{day}</div>)}
-                    </div>
-                    <div className="mt-1 space-y-1">
-                        {timeSlots.map(time => (
-                            <div key={time} className="grid grid-cols-7 gap-1 h-20">
-                                <div className="flex items-center justify-center bg-gray-100 dark:bg-gray-700 rounded-md text-sm font-bold">{time}</div>
-                                {daysOfWeek.map((day, dayIndex) => {
-                                    const dayString = (dayIndex + 1).toString();
-                                    const classInfo = timetable.find(c => c.day === dayString && c.time.startsWith(time.slice(0, 2)));
-                                    const isLunch = time >= lunchStartTime && time < lunchEndTime;
-                                   
-                                    if (isLunch) {
-                                        return <div key={day} className="flex items-center justify-center bg-gray-200 dark:bg-gray-600 rounded-md text-sm font-medium">LUNCH</div>
-                                    }
-                                   
-                                    return (
-                                        <button key={day} onClick={() => handleCellClick(dayString, time)} className={`rounded-md p-1 flex flex-col items-center justify-center text-xs text-center transition-all duration-200 hover:ring-2 ring-blue-500 ${classInfo ? getSubjectColor(classInfo.name) : 'bg-gray-50 dark:bg-gray-700/50'}`}>
-                                            {classInfo && <span className="font-bold">{classInfo.name}</span>}
-                                        </button>
-                                    )
-                                })}
-                            </div>
-                        ))}
-                    </div>
-                </div>
-                <div className="flex justify-end mt-4">
-                    <button onClick={handleClearAll} className="bg-red-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-red-700 transition-colors text-sm">
-                        Clear All
+            
+            <SettingsCard title="Your Classes">
+                <div className="flex justify-between items-center mb-4">
+                    <button 
+                        onClick={() => setShowAddModal(true)}
+                        className="bg-green-600 text-white font-bold py-2 px-6 rounded-lg shadow-md hover:bg-green-700 transition-colors flex items-center"
+                    >
+                        <span className="text-xl mr-2">+</span> Add Class
                     </button>
+                    {timetable.length > 0 && (
+                        <button onClick={handleClearAll} className="bg-red-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-red-700 transition-colors text-sm">
+                            Clear All
+                        </button>
+                    )}
+                </div>
+                
+                {showAddModal && (
+                    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowAddModal(false)}>
+                        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md w-full" onClick={e => e.stopPropagation()}>
+                            <h3 className="text-xl font-bold mb-4 text-gray-800 dark:text-gray-200">Add New Class</h3>
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Class Name</label>
+                                    <input 
+                                        type="text" 
+                                        value={newClass.name}
+                                        onChange={e => setNewClass({...newClass, name: e.target.value})}
+                                        placeholder="e.g., Mathematics"
+                                        className="input-style"
+                                        autoFocus
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Day</label>
+                                    <select 
+                                        value={newClass.day}
+                                        onChange={e => setNewClass({...newClass, day: e.target.value})}
+                                        className="input-style"
+                                    >
+                                        {daysOfWeek.map((day, idx) => (
+                                            <option key={idx} value={(idx + 1).toString()}>{day}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Start Time</label>
+                                    <input 
+                                        type="time" 
+                                        value={newClass.startTime}
+                                        onChange={e => setNewClass({...newClass, startTime: e.target.value})}
+                                        className="input-style"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">End Time</label>
+                                    <input 
+                                        type="time" 
+                                        value={newClass.endTime}
+                                        onChange={e => setNewClass({...newClass, endTime: e.target.value})}
+                                        className="input-style"
+                                    />
+                                </div>
+                            </div>
+                            <div className="flex space-x-2 mt-6">
+                                <button 
+                                    onClick={handleAddClass}
+                                    className="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition-colors font-medium"
+                                >
+                                    Add Class
+                                </button>
+                                <button 
+                                    onClick={() => setShowAddModal(false)}
+                                    className="flex-1 bg-gray-500 text-white py-2 rounded-lg hover:bg-gray-600 transition-colors font-medium"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {daysOfWeek.map((day, idx) => {
+                        const dayNum = (idx + 1).toString();
+                        const classes = classesByDay[dayNum] || [];
+                        return (
+                            <div key={day} className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+                                <h3 className="font-bold text-lg mb-3 text-gray-800 dark:text-gray-200 border-b border-gray-300 dark:border-gray-600 pb-2">
+                                    {day}
+                                </h3>
+                                {classes.length === 0 ? (
+                                    <p className="text-sm text-gray-500 dark:text-gray-400 italic">No classes</p>
+                                ) : (
+                                    <div className="space-y-2">
+                                        {classes.map(cls => (
+                                            <div key={cls.id} className={`${getSubjectColor(cls.name)} p-3 rounded-lg flex justify-between items-center`}>
+                                                <div>
+                                                    <p className="font-semibold text-sm">{cls.name}</p>
+                                                    <p className="text-xs opacity-80">
+                                                        {cls.startTime && cls.endTime 
+                                                            ? `${cls.startTime} - ${cls.endTime}`
+                                                            : cls.time || 'Time not set'}
+                                                    </p>
+                                                </div>
+                                                <button 
+                                                    onClick={() => handleDeleteClass(cls.id)}
+                                                    className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 font-bold text-lg"
+                                                >
+                                                    ×
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
                 </div>
             </SettingsCard>
         </div>
@@ -735,15 +1078,11 @@ function SettingsPage({ user, userData }) {
     const [semesterStartDate, setSemesterStartDate] = useState('');
     const [semesterEndDate, setSemesterEndDate] = useState('');
     const [attendanceGoal, setAttendanceGoal] = useState(75);
-    const [lunchStartTime, setLunchStartTime] = useState('12:00');
-    const [lunchEndTime, setLunchEndTime] = useState('13:00');
     useEffect(() => {
         if (userData) {
             setSemesterStartDate(userData.semesterStartDate || '');
             setSemesterEndDate(userData.semesterEndDate || '');
             setAttendanceGoal(userData.attendanceGoal || 75);
-            setLunchStartTime(userData.lunchStartTime || '12:00');
-            setLunchEndTime(userData.lunchEndTime || '13:00');
         }
     }, [userData]);
     const handleSave = async () => {
@@ -751,9 +1090,7 @@ function SettingsPage({ user, userData }) {
         await setDoc(userDocRef, {
             semesterStartDate,
             semesterEndDate,
-            attendanceGoal: Number(attendanceGoal),
-            lunchStartTime,
-            lunchEndTime
+            attendanceGoal: Number(attendanceGoal)
         }, { merge: true });
         alert('Settings saved!');
     };
@@ -777,16 +1114,6 @@ function SettingsPage({ user, userData }) {
                      <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">My Attendance Goal (%)</label>
                         <input type="number" min="0" max="100" value={attendanceGoal} onChange={e => setAttendanceGoal(e.target.value)} className="input-style" />
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-                        <div>
-                           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Lunch Start Time</label>
-                           <input type="time" value={lunchStartTime} onChange={e => setLunchStartTime(e.target.value)} className="input-style" />
-                        </div>
-                        <div>
-                           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Lunch End Time</label>
-                           <input type="time" value={lunchEndTime} onChange={e => setLunchEndTime(e.target.value)} className="input-style" />
-                        </div>
                     </div>
                 </SettingsCard>
                 <div className="flex justify-end">
@@ -881,7 +1208,11 @@ function WeekAtAGlance({ userData }) {
                                     {classesOnDay.length > 0 ? classesOnDay.map(c => (
                                         <div key={c.id} className={`p-1.5 rounded text-xs text-center ${getSubjectColor(c.name)}`}>
                                             <p className="font-semibold truncate">{c.name}</p>
-                                            <p className="opacity-80">{c.time}</p>
+                                            <p className="opacity-80">
+                                                {c.startTime && c.endTime 
+                                                    ? `${c.startTime} - ${c.endTime}`
+                                                    : c.time || ''}
+                                            </p>
                                         </div>
                                     )) : <p className="text-center text-xs text-gray-400 mt-4">No Classes</p>}
                                 </div>
